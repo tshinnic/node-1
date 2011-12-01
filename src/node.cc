@@ -1484,7 +1484,7 @@ v8::Handle<v8::Value> MemoryUsage(const v8::Arguments& args) {
     heap_used_symbol = NODE_PSYMBOL("heapUsed");
   }
 
-  info->Set(rss_symbol, Integer::NewFromUnsigned(rss));
+  info->Set(rss_symbol, Number::New(rss));
 
   // V8 memory usage
   HeapStatistics v8_heap_stats;
@@ -1594,9 +1594,14 @@ Handle<Value> DLOpen(const v8::Arguments& args) {
     err = uv_dlsym(lib, "init", reinterpret_cast<void**>(&mod->register_func));
     if (err.code != UV_OK) {
       uv_dlclose(lib);
-      Local<Value> exception = Exception::Error(
-          String::New("Out of memory."));
-      return ThrowException(exception);
+
+      const char* message;
+      if (err.code == UV_ENOENT)
+        message = "Module entry point not found.";
+      else
+        message = "Out of memory.";
+
+      return ThrowException(Exception::Error(String::New(message)));
     }
     /* End Compatibility hack */
   }
